@@ -1,15 +1,15 @@
 
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
-import { Input, Label, Textarea, Checkbox, Switch } from '@/components/ui/Forms';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
-import { Select, SelectItem } from '@/components/ui/Select';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import { Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Display';
-import { HandHeart, LayoutDashboard, ChefHat, CreditCard, School, Truck, PieChart, Smile, ShoppingCart, Percent, Gift } from 'lucide-react';
+import { Checkbox, Input, Label, Switch, Textarea } from '@/components/ui/Forms';
+import { Select, SelectItem } from '@/components/ui/Select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { motion } from 'framer-motion';
+import { ChefHat, CreditCard, Gift, HandHeart, LayoutDashboard, Percent, PieChart, School, ShoppingCart, Smile, Truck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import * as api from './lib/api';
 
 type PlanId = 'WEEKLY'|'MONTHLY';
