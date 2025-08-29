@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -11,7 +12,6 @@ import { ChefHat, CreditCard, Gift, HandHeart, LayoutDashboard, Percent, PieChar
 import { useEffect, useMemo, useState } from 'react';
 import * as api from './lib/api';
 
-// types (same as before)
 type PlanId = 'WEEKLY'|'MONTHLY';
 type Cohort = 'KG'|'I-III'|'IV-VIII';
 type Subscription = { id:number; childId:number; planId:PlanId; status:string; startDate:string; nextRenewal:string; price:number; currency:string };
@@ -24,8 +24,6 @@ type Invoice = { id:number; subscriptionId:number; periodStart:string; periodEnd
 const formatINR = (n:number)=> new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(n);
 const addDays=(d:string,n:number)=>{const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10)};
 
-// demo seeders (optional, same as before)
-
 export default function App(){
   const [activeTab, setActiveTab] = useState('parent');
   const [children, setChildren] = useState<Child[]>([]);
@@ -35,76 +33,134 @@ export default function App(){
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [selections, setSelections] = useState<Selection[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
+  const todayISO = new Date().toISOString().slice(0,10);
 
   useEffect(()=>{
     (async()=>{
-      const ch = await api.getChildren().catch(()=>[] as Child[]);
+      const ch = await api.getChildren();
       setChildren(ch);
       if (ch[0]){
-        const s = await api.getSubs(ch[0].id).catch(()=>[] as Subscription[]);
+        const s = await api.getSubs(ch[0].id);
         setSubs(s);
         if (s[0]){
-          const inv = await api.getInvoices(s[0].id).catch(()=>[] as Invoice[]);
+          const inv = await api.getInvoices(s[0].id);
           setInvoices(inv);
         }
       }
-      const todayISO = new Date().toISOString().slice(0,10);
-      const men = await api.getMenus(todayISO, addDays(todayISO,7)).catch(()=>[] as MenuItem[]);
+      const men = await api.getMenus(todayISO, addDays(todayISO, 7));
       setMenus(men);
-      const del = await api.getDeliveries(todayISO).catch(()=>[] as Delivery[]);
+      const del = await api.getDeliveries(todayISO);
       setDeliveries(del);
-    })();
+    })().catch(console.error);
   },[]);
 
   const child = children[0];
   const sub = subs[0];
+  const upcoming = menus[0];
+
   const activeSubs = subs.filter(s=>s.status==='ACTIVE');
   const mrr = useMemo(()=> activeSubs.reduce((sum,s)=> sum + (s.planId==='WEEKLY'? 499*4 : 1799), 0),[activeSubs]);
   const avgRating = useMemo(()=> feedback.length? feedback.reduce((s,f)=>s+f.rating,0)/feedback.length : 0,[feedback]);
   const onTimeRate = useMemo(()=>{
     const delivered = deliveries.filter(d=>d.status==='DELIVERED').length;
-    const total = deliveries.filter(d=>['DELIVERED','EXCEPTION','OUT_FOR_DELIVERY'].includes(d.status)).length || 1;
+    const total = deliveries.filter(d=>['DELIVERED','EXCEPTION'].includes(d.status)).length || 1;
     return Math.round((delivered/total)*100);
   },[deliveries]);
 
+  const toggleSkipDay = async (childId:number, date:string)=>{
+    await api.toggleSelection({ childId, date, status:'skip' });
+    setSelections(prev=>{
+      const exists = prev.find(s=>s.childId===childId && s.date===date);
+      return exists ? prev.filter(s=> !(s.childId===childId && s.date===date)) : [...prev, { id: Date.now(), childId, date, status:'skip'} as any];
+    });
+  };
+
+  const markDelivered = async (id:number)=>{
+    const d = await api.markDelivered(id);
+    setDeliveries(prev=> prev.map(x=> x.id===id? d: x));
+  };
+
+  const payInvoice = async (id:number, method:'UPI'|'CARD')=>{
+    const inv = await api.payInvoice(id, method);
+    setInvoices(prev=> prev.map(i=> i.id===id? inv: i));
+  };
+
+  const createOrChangeSubscription = async (childId:number, planId:PlanId, coupon?:{code:string; value:number})=>{
+    const s = await api.changePlan({ childId, planId, couponCode: coupon?.code, useReferral: true });
+    const list = await api.getSubs(childId);
+    setSubs(list);
+    const inv = await api.getInvoices(s.id);
+    setInvoices(inv);
+  };
+
   return (
     <div className='bg-gradient-to-b from-white to-slate-50 text-slate-900 min-h-screen'>
-      <Header />
+      <header className='sticky top-0 z-30 border-b bg-white/70 backdrop-blur'>
+        <div className='mx-auto max-w-7xl px-4 h-16 flex items-center justify-between'>
+          <div className='flex items-center gap-3'>
+            <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}}>
+              <div className='h-9 w-9 rounded-2xl bg-gradient-to-tr from-lime-400 to-emerald-500 grid place-items-center shadow'>
+                <HandHeart className='h-5 w-5 text-white' />
+              </div>
+            </motion.div>
+            <div>
+              <div className='text-lg font-semibold'>LunchBuddy</div>
+              <div className='text-xs text-slate-500'>Healthy Happiness in Every Box</div>
+            </div>
+          </div>
+          <div className='hidden md:flex items-center gap-2'>
+            <Button variant='ghost' className='gap-2'><ChefHat className='h-4 w-4'/>Menu</Button>
+            <Button variant='ghost' className='gap-2'><CreditCard className='h-4 w-4'/>Plans</Button>
+            <Button className='gap-2'><Smile className='h-4 w-4'/>Start Trial</Button>
+          </div>
+        </div>
+      </header>
+
       <main className='mx-auto max-w-7xl px-4 pb-24 mt-6'>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <PillsTabs />
+          <TabsList className='grid grid-cols-5 lg:grid-cols-6 gap-2'>
+            <TabsTrigger value='parent' className='flex items-center gap-2'><LayoutDashboard className='h-4 w-4'/> Parent</TabsTrigger>
+            <TabsTrigger value='menu' className='flex items-center gap-2'><ChefHat className='h-4 w-4'/> Menu</TabsTrigger>
+            <TabsTrigger value='admin' className='flex items-center gap-2'><School className='h-4 w-4'/> Admin</TabsTrigger>
+            <TabsTrigger value='delivery' className='flex items-center gap-2'><Truck className='h-4 w-4'/> Delivery</TabsTrigger>
+            <TabsTrigger value='analytics' className='flex items-center gap-2'><PieChart className='h-4 w-4'/> Analytics</TabsTrigger>
+            <TabsTrigger value='pricing' className='hidden lg:flex items-center gap-2'><CreditCard className='h-4 w-4'/> Pricing</TabsTrigger>
+          </TabsList>
+
           <TabsContent value='parent' className='mt-6'>
-            <FadeIn>
-              {child && sub && menus[0] ? (
-                <ParentDashboard child={child} sub={sub} menus={menus} selections={selections} invoices={invoices}
-                  onToggleSkip={(date)=>{}} onFeedback={(f)=>{}} onPay={(id,m)=>{}} onManagePlan={(plan,coupon)=>{}} />
-              ): <div>Loading...</div>}
-            </FadeIn>
+            {child && sub && upcoming ? (
+              <ParentDashboard
+                child={child}
+                sub={sub}
+                menus={menus}
+                selections={selections}
+                onToggleSkip={(date)=>toggleSkipDay(child.id, date)}
+                onFeedback={async (f:any)=>{ await api.sendFeedback(f); setFeedback(p=>[f,...p]) }}
+                invoices={invoices}
+                onPay={payInvoice}
+                onManagePlan={(plan, coupon)=> createOrChangeSubscription(child.id, plan, coupon)}
+              />
+            ) : <div className='text-sm text-slate-500'>Loading…</div>}
           </TabsContent>
+
           <TabsContent value='menu' className='mt-6'>
-            <FadeIn>
-              {child && <MenuExplorer menus={menus} child={child} />}
-            </FadeIn>
+            {child ? <MenuExplorer menus={menus as any} child={child as any}/> : null}
           </TabsContent>
+
           <TabsContent value='admin' className='mt-6'>
-            <FadeIn>
-              {child && <AdminPanel date={new Date().toISOString().slice(0,10)} menus={menus} children={[child]} selections={selections} />}
-            </FadeIn>
+            {child ? <AdminPanel date={new Date().toISOString().slice(0,10)} menus={menus as any} children={[child as any]} selections={selections as any}/> : null}
           </TabsContent>
+
           <TabsContent value='delivery' className='mt-6'>
-            <FadeIn>
-              <DeliveryPanel deliveries={deliveries} onMarkDelivered={(id)=>{}} />
-            </FadeIn>
+            <DeliveryPanel deliveries={deliveries as any} onMarkDelivered={(id)=>markDelivered(id)} />
           </TabsContent>
+
           <TabsContent value='analytics' className='mt-6'>
-            <FadeIn>
-              <AnalyticsPanel mrr={mrr} subs={activeSubs.length} avgRating={avgRating} onTimeRate={onTimeRate} invoices={invoices} />
-            </FadeIn>
+            <AnalyticsPanel mrr={mrr} subs={activeSubs.length} avgRating={avgRating} onTimeRate={onTimeRate} invoices={invoices as any} />
           </TabsContent>
+
           <TabsContent value='pricing' className='mt-6'>
-            <FadeIn>
-              <PricingShowcase />
-            </FadeIn>
+            <PricingShowcase />
           </TabsContent>
         </Tabs>
       </main>
@@ -112,65 +168,6 @@ export default function App(){
   );
 }
 
-function Header(){
-  return (
-    <header className='sticky top-0 z-30 border-b bg-white/70 backdrop-blur'>
-      <div className='mx-auto max-w-7xl px-4 h-16 flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}}>
-            <div className='h-9 w-9 rounded-2xl bg-gradient-to-tr from-lime-400 to-emerald-500 grid place-items-center shadow'>
-              <HandHeart className='h-5 w-5 text-white' />
-            </div>
-          </motion.div>
-          <div>
-            <div className='text-lg font-semibold'>Lunch-Buddy</div>
-            <div className='text-xs text-slate-500'>Healthy Happiness in Every Box</div>
-          </div>
-        </div>
-        <div className='hidden md:flex items-center gap-2'>
-          <Button variant='ghost' className='gap-2'><ChefHat className='h-4 w-4'/>Menu</Button>
-          <Button variant='ghost' className='gap-2'><CreditCard className='h-4 w-4'/>Plans</Button>
-          <Button className='gap-2'><Smile className='h-4 w-4'/>Start Trial</Button>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function PillsTabs(){
-  return (
-    <TabsList className='flex flex-wrap gap-2 rounded-2xl bg-slate-100 p-1'>
-      <TabsTrigger value='parent' className='rounded-xl px-3 py-2 data-[state=active]:bg-white flex items-center gap-2'>
-        <LayoutDashboard className='h-4 w-4'/> Parent
-      </TabsTrigger>
-      <TabsTrigger value='menu' className='rounded-xl px-3 py-2 data-[state=active]:bg-white flex items-center gap-2'>
-        <ChefHat className='h-4 w-4'/> Menu
-      </TabsTrigger>
-      <TabsTrigger value='admin' className='rounded-xl px-3 py-2 data-[state=active]:bg-white flex items-center gap-2'>
-        <School className='h-4 w-4'/> Admin
-      </TabsTrigger>
-      <TabsTrigger value='delivery' className='rounded-xl px-3 py-2 data-[state=active]:bg-white flex items-center gap-2'>
-        <Truck className='h-4 w-4'/> Delivery
-      </TabsTrigger>
-      <TabsTrigger value='analytics' className='rounded-xl px-3 py-2 data-[state=active]:bg-white flex items-center gap-2'>
-        <PieChart className='h-4 w-4'/> Analytics
-      </TabsTrigger>
-      <TabsTrigger value='pricing' className='rounded-xl px-3 py-2 data-[state=active]:bg-white hidden lg:flex items-center gap-2'>
-        <CreditCard className='h-4 w-4'/> Pricing
-      </TabsTrigger>
-    </TabsList>
-  );
-}
-
-function FadeIn({children}:{children:React.ReactNode}){
-  return <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.2}}>{children}</motion.div>;
-}
-
-function SkeletonCard(){
-  return <div className='rounded-2xl border bg-white p-4 animate-pulse'><div className='h-4 w-40 bg-slate-200 rounded mb-3' /><div className='h-24 w-full bg-slate-100 rounded' /></div>;
-}
-
-// ─── Parent ─────────────────────────────────────────────────────────────────
 function ParentDashboard(props: {
   child: Child;
   sub: Subscription;
@@ -273,7 +270,7 @@ function ParentDashboard(props: {
               <TableRow><TableHead>Invoice</TableHead><TableHead>Period</TableHead><TableHead className='text-right'>Amount</TableHead><TableHead>Status</TableHead></TableRow>
             </TableHeader>
             <TableBody>
-              {props.invoices.map(i=> (
+              {invoices.map(i=> (
                 <TableRow key={i.id}>
                   <TableCell>{i.id}</TableCell>
                   <TableCell>{i.periodStart} → {i.periodEnd}</TableCell>
@@ -348,7 +345,6 @@ function FeedbackQuick({childId, date, onSubmit}:{childId:number; date:string; o
   );
 }
 
-// ─── Menu ───────────────────────────────────────────────────────────────────
 function MenuExplorer({menus, child}:{menus:MenuItem[]; child:Child}){
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -370,7 +366,6 @@ function MenuExplorer({menus, child}:{menus:MenuItem[]; child:Child}){
   );
 }
 
-// ─── Admin ──────────────────────────────────────────────────────────────────
 function AdminPanel({date:initialDate, menus, children, selections}:{date:string; menus:MenuItem[]; children:Child[]; selections:Selection[]}){
   const [date, setDate] = useState(initialDate);
   const menu = menus.find(m=>m.date===date) || menus[0];
@@ -411,7 +406,6 @@ function AdminPanel({date:initialDate, menus, children, selections}:{date:string
   );
 }
 
-// ─── Delivery ───────────────────────────────────────────────────────────────
 function DeliveryPanel({deliveries, onMarkDelivered}:{deliveries:Delivery[]; onMarkDelivered:(id:number)=>void}){
   const routes = useMemo(()=>{
     const map = new Map<string, Delivery[]>();
@@ -445,7 +439,6 @@ function DeliveryPanel({deliveries, onMarkDelivered}:{deliveries:Delivery[]; onM
   );
 }
 
-// ─── Analytics ──────────────────────────────────────────────────────────────
 function AnalyticsPanel({mrr, subs, avgRating, onTimeRate, invoices}:{mrr:number; subs:number; avgRating:number; onTimeRate:number; invoices:Invoice[]}){
   const due = invoices.filter(i=>i.status==='DUE').length;
   const paid = invoices.filter(i=>i.status==='PAID').length;
@@ -484,7 +477,6 @@ function KpiCard({title, value, subtitle}:{title:string; value:string|number; su
   );
 }
 
-// ─── Pricing ────────────────────────────────────────────────────────────────
 function PricingShowcase(){
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
