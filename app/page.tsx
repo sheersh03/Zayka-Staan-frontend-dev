@@ -99,14 +99,15 @@ export default function App(){
         <div className='mx-auto max-w-7xl px-4 h-16 flex items-center justify-between'>
           <div className='flex items-center gap-3'>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-              <Image
-                src="/LunchbuddyInitial2-removebg-preview.png"
-                alt="LunchBuddy logo"
-                width={36}
-                height={36}
-                className="h-9 w-9 object-contain"
-                priority
-              />
+          <img
+            src="/LunchbuddyInitial2-removebg-preview.png"
+            alt="LunchBuddy logo"
+            width={36}
+            height={36}
+            className="h-9 w-9 object-contain"
+            loading="eager"
+            decoding="async"
+          />
             </motion.div>
             <div>
               <div className='text-lg font-semibold'>LunchBuddy</div>
