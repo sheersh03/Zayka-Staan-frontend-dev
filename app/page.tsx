@@ -8,7 +8,7 @@ import { Checkbox, Input, Label, Switch, Textarea } from '@/components/ui/Forms'
 import { Select, SelectItem } from '@/components/ui/Select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { motion } from 'framer-motion';
-import { ChefHat, CreditCard, Gift, HandHeart, LayoutDashboard, Percent, PieChart, School, ShoppingCart, Smile, Truck } from 'lucide-react';
+import { ChefHat, CreditCard, Gift, LayoutDashboard, Percent, PieChart, School, ShoppingCart, Smile, Truck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import * as api from './lib/api';
 
@@ -98,10 +98,15 @@ export default function App(){
       <header className='sticky top-0 z-30 border-b bg-white/70 backdrop-blur'>
         <div className='mx-auto max-w-7xl px-4 h-16 flex items-center justify-between'>
           <div className='flex items-center gap-3'>
-            <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}}>
-              <div className='h-9 w-9 rounded-2xl bg-gradient-to-tr from-lime-400 to-emerald-500 grid place-items-center shadow'>
-                <HandHeart className='h-5 w-5 text-white' />
-              </div>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+              <Image
+                src="/LunchbuddyInitial2-removebg-preview.png"
+                alt="LunchBuddy logo"
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
+                priority
+              />
             </motion.div>
             <div>
               <div className='text-lg font-semibold'>LunchBuddy</div>
