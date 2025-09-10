@@ -50,7 +50,7 @@ export default function LandingPage() {
       {/* header */}
       <header className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Image src="/lunchbuddy-logo.png" alt="LunchBuddy" width={36} height={36} />
+          <Image src="/LunchbuddyInitial2-removebg-preview.png" alt="LunchBuddy" width={36} height={36} />
           <div>
             <div className="text-lg font-semibold">LunchBuddy</div>
             <div className="text-xs text-slate-500">Smart lunchboxes for happy kids</div>
