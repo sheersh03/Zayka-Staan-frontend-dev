@@ -1,1 +1,52 @@
-import * as React from 'react'; export function Card({children,className=''}:{children:React.ReactNode,className?:string}){return <div className={`rounded-2xl border bg-white ${className}`}>{children}</div>} export function CardHeader({children}:{children:React.ReactNode}){return <div className='p-4 border-b'>{children}</div>} export function CardTitle({children}:{children:React.ReactNode}){return <div className='text-base font-semibold'>{children}</div>} export function CardDescription({children}:{children:React.ReactNode}){return <div className='text-sm text-slate-500'>{children}</div>} export function CardContent({children,className='' }:{children:React.ReactNode,className?:string}){return <div className={`p-4 ${className}`}>{children}</div>} export function CardFooter({children}:{children:React.ReactNode}){return <div className='p-4 border-t'>{children}</div>}
+import * as React from "react";
+
+// utility to merge classNames
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+export function Card({
+  children,
+  className = "",
+}: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("rounded-2xl border bg-white", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function CardHeader({
+  children,
+  className = "",
+}: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("p-4 border-b", className)}>{children}</div>;
+}
+
+export function CardTitle({
+  children,
+  className = "",
+}: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("text-base font-semibold", className)}>{children}</div>;
+}
+
+export function CardDescription({
+  children,
+  className = "",
+}: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("text-sm text-slate-500", className)}>{children}</div>;
+}
+
+export function CardContent({
+  children,
+  className = "",
+}: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("p-4", className)}>{children}</div>;
+}
+
+export function CardFooter({
+  children,
+  className = "",
+}: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("p-4 border-t", className)}>{children}</div>;
+}

@@ -9,6 +9,16 @@ async function api(path: string, init?: RequestInit) {
   return res.json();
 }
 
+
+async function localApi(path: string, init?: RequestInit) {
+    const headers: any = { "Content-Type": "application/json", ...(init?.headers || {}) };
+    const res = await fetch(path, { ...init, headers, cache: "no-store" });
+    if (!res.ok) throw new Error(await res.text());
+    // some notify routes might return no JSON; be tolerant
+    try { return await res.json(); } catch { return { ok: true }; }
+  }
+  
+
 export const getChildren = () => api(`/children`);
 export const getMenus = (from: string, to: string) => api(`/menus?from=${from}&to=${to}`);
 export const getSubs = (childId: number) => api(`/subscriptions?childId=${childId}`);
@@ -19,3 +29,9 @@ export const toggleSelection = (body: any) => api(`/selections`, { method:"POST"
 export const getDeliveries = (date: string) => api(`/deliveries?date=${date}`);
 export const markDelivered = (id: number) => api(`/deliveries/${id}/mark-delivered`, { method:"POST" });
 export const sendFeedback = (body: any) => api(`/feedback`, { method:"POST", body: JSON.stringify(body) });
+
+export const notifyByEmail = (email: string) =>
+    localApi(`/api/notify/email`, { method: "POST", body: JSON.stringify({ email }) });
+  
+  export const notifyByWhatsApp = (phone: string) =>
+    localApi(`/api/notify/whatsapp`, { method: "POST", body: JSON.stringify({ phone }) });
